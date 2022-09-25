@@ -13,9 +13,11 @@ fn main() {
         0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,
     ].map(|x| x != 0));
+    let sigmoid: fn(f32) -> f32 = |x| return 1. / 1. + 2.718281828459045f32.powf(x);
 
     //NeuralNetCSR::new(&adj_m, vec![0,1], vec![5,6]);
-    NeuralNetCSC::new(&adj_m, vec![0,1], vec![5,6]);
+    
+    NeuralNetCSC::new(&adj_m, vec![0,1], vec![5,6], sigmoid);
 }
 
 
@@ -96,10 +98,11 @@ struct NeuralNetCSC{
     //  1st being the nodes current value
     input: Vec<u32>,
     output: Vec<u32>,
+    activation_func: fn(f32)-> f32,
 }
 
 impl NeuralNetCSC{
-    pub fn new(adjacency_matrix: &DMatrix<bool>, input: Vec<u32>, output: Vec<u32>) -> Self{
+    pub fn new(adjacency_matrix: &DMatrix<bool>, input: Vec<u32>, output: Vec<u32>, activation_func: fn(f32) -> f32) -> Self{
         let mut coords: Vec<[u32; 2]> = vec![];
         let mut source: Vec<(u32, f32)> = vec![];
         let mut index: Vec<[u32; 2]> = vec![];
@@ -132,11 +135,47 @@ impl NeuralNetCSC{
             nodes,
             input,
             output,
+            activation_func,
         };
     }
 
-    fn propagate(input: Vec<f32>) -> Vec<f32>{
-        todo!();
+    pub fn propagate(&mut self, input: Vec<f32>) -> Vec<f32>{
+        let input_len = input.len();
+        if self.index.len() != input_len{
+            panic!("input length mismatch, is {}, should be {}", input_len, self.input.len());
+        }
+
+        //setting values of the input nodes
+        for i in 0..input_len{
+            self.nodes[i][1] = input[i];
+        }
+
+        let index_len = self.index.len();
+        for i in 0..index_len{
+            let dest_id = self.index[i][0];
+            let start_i = self.index[i][1];
+            let end_i = if index_len < i+1 {
+                self.index[i+1][1]
+            } else {
+                self.source.len() as u32
+            };
+
+            self.nodes[dest_id as usize][1] = self.sigma_dest_node(dest_id, start_i, end_i)
+        }
+        // to do return the output
+        return self.nodes[];
+    }
+
+    fn sigma_dest_node(&self, dest_id: u32, start_i: u32, end_i: u32) -> f32{
+        let mut total: f32 = 0.;
+
+        for i in start_i as usize..end_i as usize{
+            let value = self.nodes[self.source[i].0 as usize][1];
+            let weight = self.source[i].1;
+            total += value * weight;
+        }
+
+        return (self.activation_func)(total + self.nodes[dest_id as usize][0]);
     }
     
 }
