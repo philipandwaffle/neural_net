@@ -13,11 +13,15 @@ fn main() {
         0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,
     ].map(|x| x != 0));
-    let sigmoid: fn(f32) -> f32 = |x| return 1. / 1. + 2.718281828459045f32.powf(x);
+    let sigmoid: fn(f32) -> f32 = |x| return 1. / (1. + 2.718281828459045f32.powf(x));
 
     //NeuralNetCSR::new(&adj_m, vec![0,1], vec![5,6]);
     
-    NeuralNetCSC::new(&adj_m, vec![0,1], vec![5,6], sigmoid);
+    let mut ann = NeuralNetCSC::new(&adj_m, vec![0,1], vec![5,6], sigmoid);
+    println!("{:?}", ann.nodes);
+    let out = ann.propagate(vec![1.,1.]);    
+    println!("{:?}", out);
+    println!("{:?}", ann.nodes);
 }
 
 
@@ -141,7 +145,7 @@ impl NeuralNetCSC{
 
     pub fn propagate(&mut self, input: Vec<f32>) -> Vec<f32>{
         let input_len = input.len();
-        if self.index.len() != input_len{
+        if self.input.len() != input_len{
             panic!("input length mismatch, is {}, should be {}", input_len, self.input.len());
         }
 
@@ -163,7 +167,9 @@ impl NeuralNetCSC{
             self.nodes[dest_id as usize][1] = self.sigma_dest_node(dest_id, start_i, end_i)
         }
         // to do return the output
-        return self.nodes[];
+
+        let bar = self.output.iter().map(|node_id| self.nodes[*node_id as usize][1]).collect::<Vec<f32>>();
+        return bar;
     }
 
     fn sigma_dest_node(&self, dest_id: u32, start_i: u32, end_i: u32) -> f32{
@@ -177,5 +183,6 @@ impl NeuralNetCSC{
 
         return (self.activation_func)(total + self.nodes[dest_id as usize][0]);
     }
+    
     
 }
