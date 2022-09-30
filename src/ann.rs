@@ -123,6 +123,12 @@ impl ANN{
             bias[0] = (self.bias_mutate_fn)(bias[0]);
         }
     }
+
+    //returns node bias, value and incoming edges' weight
+    fn node_info(node_id: u32) -> Vec<f32>{
+        
+        todo!();
+    }
 }
 impl Clone for ANN{
     fn clone(&self) -> Self {
@@ -140,15 +146,11 @@ impl Clone for ANN{
 }
 impl Debug for ANN{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("ANN")
-            .field("source", &self.source)
-            .field("index", &self.index)
-            .field("nodes", &self.nodes)
-            .field("input", &self.input)
-            .field("output", &self.output)
-            .field("activation_fn", &self.activation_fn)
-            .field("weight_mutate_fn", &self.weight_mutate_fn)
-            .field("bias_mutate_fn", &self.bias_mutate_fn)
+            .field("\nsource", &self.source)
+            .field("\nindex", &self.index)
+            .field("\nnodes", &self.nodes)
         .finish()
     }
 }
