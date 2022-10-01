@@ -1,30 +1,89 @@
-use std::thread;
+use std::{thread, time::Duration};
 use std::sync::mpsc;
 use std::time::Instant;
 
-use layer::grid_layer::Layer;
-use na::DMatrix;
 extern crate nalgebra as na;
+use na::DMatrix;
 use rand::Rng;
+use show_image::{event, ImageView, ImageInfo, create_window};
 
 mod ann;
 use crate::ann::*;
 
 mod layer;
+use layer::grid_layer::Layer;
 
-fn main(){
-    let layer = Layer::new(10, 10);
-    let m = DMatrix::from_row_slice(3, 3, &[
-        1,0,1,
+#[show_image::main]
+fn main(){   
+    let mut layer = Layer::new(100, 100);
+    let hood_filter = DMatrix::from_row_slice(3, 3, &[
+        1,0,0,
         0,1,0,
-        1,0,1,
+        0,0,1,        
     ].map(|x| x as f32));
+
+    println!("{}", hood_filter.row_iter().len()/2);
     // let flatten_fn:  fn(&DMatrix<f32>) -> f32 = 
-    fn flatten_fn(m: &DMatrix<f32>) -> f32 {
+    fn conway_fn(m: &DMatrix<f32>) -> f32 {        
+        let total: f32 = m.as_slice().iter().sum();        
+        let alive = m.as_slice()[4] == 1.;
+        if alive && (total <= 2. && total >= 1.)  {
+            return  1.;
+        }else if !alive && total >= 2.{
+            return 1.
+        }else{
+            return 0.5;
+        }        
+    }
+    fn avg_fn(m: &DMatrix<f32>) -> f32 {        
         let total: f32 = m.as_slice().iter().sum();
-        return total;
-    };
-    let m = layer.hood_op(m, flatten_fn);
+        return total/9.;  
+    }
+    fn func(m: &DMatrix<f32>) -> f32 {        
+        let total: f32 = m.as_slice().iter().sum();
+        return (total/9.).tanh();
+    }
+    fn quadratic_fn(m: &DMatrix<f32>) -> f32 {
+        let total: f32 = m.as_slice().iter().sum();
+        return 4.*((total/9.)-0.5).powf(2.);
+    }
+    fn sin_fn(m: &DMatrix<f32>) -> f32 {
+        let x: f32 = m.as_slice().iter().sum();
+        let x = (x/9.).tanh();
+        let x = (((6.*x).sin()/2.)+0.5) + (rand::thread_rng().gen::<f32>()-1.)/5.;
+        return x
+    }
+
+    let window = create_window("image", Default::default()).unwrap();
+    let debug_w = create_window("debug", Default::default()).unwrap();
+    
+    loop {
+        let m = layer.hood_op(hood_filter.clone(), quadratic_fn);
+        
+        let layer_image_vec = layer.get_layer_image();
+        let image = ImageView::new(ImageInfo::mono8(100, 100), &layer_image_vec);
+        
+        window.set_image("image", &image);
+        println!("{}", m.1.len());
+        debug_w.set_image("debug", ImageView::new(
+                ImageInfo::mono8(102, 102), 
+                &m.1.data.as_vec().clone().iter().map(|x| return (x * 255.) as u8).collect::<Vec<u8>>())
+            );
+        layer.set_data(m.0);
+        thread::sleep(Duration::new(1, 0));
+    }
+
+    for event in window.event_channel().unwrap() {
+        if let event::WindowEvent::KeyboardInput(event) = event {
+            println!("{:#?}", event);
+            if event.input.key_code == Some(event::VirtualKeyCode::Escape) && event.input.state.is_pressed() {
+                break;
+            }
+        }
+    }      
+
+    
+
     
 }
 
