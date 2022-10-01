@@ -2,6 +2,7 @@ use std::thread;
 use std::sync::mpsc;
 use std::time::Instant;
 
+use layer::grid_layer::Layer;
 use na::DMatrix;
 extern crate nalgebra as na;
 use rand::Rng;
@@ -9,8 +10,25 @@ use rand::Rng;
 mod ann;
 use crate::ann::*;
 
+mod layer;
 
-fn main() {
+fn main(){
+    let layer = Layer::new(10, 10);
+    let m = DMatrix::from_row_slice(3, 3, &[
+        1,0,1,
+        0,1,0,
+        1,0,1,
+    ].map(|x| x as f32));
+    // let flatten_fn:  fn(&DMatrix<f32>) -> f32 = 
+    fn flatten_fn(m: &DMatrix<f32>) -> f32 {
+        let total: f32 = m.as_slice().iter().sum();
+        return total;
+    };
+    let m = layer.hood_op(m, flatten_fn);
+    
+}
+
+fn main1() {
     println!("Hello, world!");
 
     let adj_m = DMatrix::from_row_slice(13, 13, &[
